@@ -54,7 +54,7 @@ CategoryNode * createCategoryNode(char * cardName) {
 	// key -> name = malloc(sizeof(cardName) + 1);
 	strcpy(key -> name, cardName);
 	
-	key -> cardList = malloc(sizeof(CardNode));
+	key -> cardList = NULL;
 	key -> left = NULL;
 	key -> right = NULL;
 	return key;
@@ -62,8 +62,6 @@ CategoryNode * createCategoryNode(char * cardName) {
 
 // Get pointer to key in binary tree
 CategoryNode * getNode(CategoryNode * key, char * cardName) {
-
-
 
 	if (key == NULL) return NULL;
 	int compare = strcmp(key -> name, cardName);
@@ -95,7 +93,8 @@ void createCardNode(CategoryNode * board, char * card) {
 
 	// Make a node of the linked list with name = card
 	CardNode * node = malloc(sizeof(CardNode));
-	node -> name = strdup(card);
+	node -> name = malloc(sizeof(card) + 1);
+	strcpy(node -> name, card);
 	// category points to the key in the board hash table
 	CategoryNode * category = getNode(board, card);
 	// next points to the first element in the linked list
@@ -109,9 +108,8 @@ int getNumCards(CategoryNode * board, char * card) {
 	int count = 0;
 	CardNode * current = getNode(board, card) -> cardList;
 	while(current) {
-		count++;
+		if (strcmp(card, current -> name) == 0) count++;
 		current = current -> next;
-		if (card[0] == 'm') printf("COUNT: %d\nName: %s\nPointer: %p\n", count, card, current);
 	}
 	return count;
 }
@@ -202,13 +200,13 @@ void playRound(Player players[], int numPlayers, char ** cards) {
 				do index = randomNum(TOTAL_CARDS); while (strcmp(cards[index], "used") == 0); // Keep getting new random cards until it is not "used"
 				players[i].hand[j] = malloc(sizeof(cards[index]) +  1);
 				strcpy(players[i].hand[j], cards[index]);
-				cards[index] = "used"; // Nullify the pointer to the string
+				strcpy(cards[index], "used"); // Nullify the pointer to the string
 		}
 	}
 
 	for (int i=0; i<numPlayers; i++){
 	for (int j=0; j<sizeHand; j++){
-	printf("%s\n", players[i].hand[j]);
+	printf("Player %d's hand: %s\n", i, players[i].hand[j]);
 	}printf("\n\n");
 	}
 	// Loop through the turns
@@ -237,9 +235,10 @@ void playRound(Player players[], int numPlayers, char ** cards) {
 	Update the player with their points for the round (except Maki and Pudding points)
 	Note: I am not considering Chopsticks in the point-scoring or game playing
 */
-void calculatePoints(Player player) {
+void calculatePoints(Player * player) {
+	printf("Player pointer: %p\n", player);
 	int total = 0;
-	CategoryNode * board = player.board;
+	CategoryNode * board = player -> board;
 	
 	total += 5 * (int)(getNumCards(board, "tempura")/2);
 	
@@ -263,9 +262,12 @@ void calculatePoints(Player player) {
 
         total += numNigiriEgg + (numNigiriEgg * (numWasabi >= numNigiriEgg) + numWasabi * (numWasabi < numNigiriEgg)) * 2;
 
-	player.points += total;
-	player.numMakis = getNumCards(board, "maki rolls three") * 3 + getNumCards(board, "maki rolls two") * 2 + getNumCards(board, "maki rolls one");
-	printf("NUMBER OF MAKIS: %d\n", player.numMakis);
+	player -> points += total;
+	player -> numMakis = getNumCards(board, "maki rolls three") * 3 + getNumCards(board, "maki rolls two") * 2 + getNumCards(board, "maki rolls one");
+	player -> numPuddings += getNumCards(board, "pudding");
+	printf("Num Puddings Real: %d\n", getNumCards(board, "pudding"));
+	printf("Num Puddings Board: %d\n", player -> numPuddings);
+	//printf("Player maki pointer: %p\nNUMBER OF MAKIS: %d\n", &player.numMakis, player.numMakis);
 }
 
 // Merge lists (part of merge sort algorithm)
@@ -315,9 +317,12 @@ int (* sort(int (* list)[2], int left, int right))[2] {
 
 // Free cards
 void freeCards (char ** cards) {
+	/*
 	for (int i=0; i<TOTAL_CARDS; i++) {
-		free(cards[i]);
+		printf("Card: %s\nPointer: %p\n", cards[i], *cards[i]);
+		free(*cards[i]);
 	}
+	*/
 	free(cards);
 }
 
@@ -331,54 +336,46 @@ void freeInts(int (*list)[2], int length){
 
 // Free linked lists within board
 void freeNodes(CategoryNode * key) {
-	printf("D\n");
 	CardNode * past = key -> cardList;
 	CardNode * future;
-	printf("E\n");
         while (past != NULL) {
 		future = past -> next;
-		printf("F\n");
-		printf("NAME: %p\n", *(past -> name));
 		free(past -> name);
-		printf("I\n");
                 free(past);
-		printf("G\n");
 		past = future;
-		printf("H\n");
 	}
-	printf("F\n");
 }
 
 // Free player's board
 void freeBoard(CategoryNode * board) {
-	printf("A\n");
 	freeNodes(board);
-	printf("B\n");
+	printf("Key: %s\n", board -> name);
 	if (board -> left) {
-		freeBoard(board -> left);
+		freeBoard(board -> left);;
+		//free(board -> left);
 	}
 	if (board -> right) {
 		freeBoard(board -> right);
+		 //free(board -> right);
 	}
-	printf("C\n");
+
 	free(board -> name);
-	free(board -> cardList);
-	free(board);
+	//free(&board);
 }
 
 // Free players
 void freePlayers(Player * players, int numPlayers) {
 	for (int i=0; i<numPlayers; i++) {
 		for (int j=0; j<(12-numPlayers); j++) {
-			free(players[i].hand[j]);
+			//free(players[i].hand[j]);
 		}
 		free(players[i].hand);
 
 		freeBoard(players[i].board); // Note: this requires a separate function for recursion
-		
+		//free(players[i].board);
 	}
 
-	free(players);
+	//free(players);
 }
 
 void main() {
@@ -398,6 +395,7 @@ void main() {
 		players[i].points = 0;
 		players[i].hand = malloc(handSize * sizeof(char *));
 		players[i].board = initializeBoard();
+		players[i].numPuddings = 0;
 	}
 	
 	// Make list of cards
@@ -412,9 +410,12 @@ void main() {
 
 		// Calculate points for the round
 		for (int j=0; j<numPlayers; j++) {
-			calculatePoints(players[j]);
+			printf("Player pointer before: %p\n", &players[j]);
+			calculatePoints(& players[j]);
+			printf("Player pointer after: %p\n", &players[j]);
 			
 			// Maki calculations
+			printf("After maki pointer: %p\t%d\n", &players[j].numMakis, players[j].numMakis);
 			numMakis[j][0] = j;
 			numMakis[j][1] = players[j].numMakis;
 
@@ -473,14 +474,6 @@ void main() {
 				printf("Player %d: %d points\t%d Puddings\n", j, players[j-1].points, players[j-1].numPuddings);
 			}
 		}
-		printf("RUNNING\n");
-		for (int j=0; j<numPlayers; j++) {
-			printf("a\n");
-			freeBoard(players[j].board);
-			printf("b\n");
-			players[j].board = initializeBoard();
-			printf("c\n");
-		}
 
 	}
 
@@ -501,9 +494,13 @@ void main() {
 	//freeInts(numMakis, numPlayers);
 	//freeInts(numPuddings, numPlayers);
 	free(numMakis);
+	printf("Makis Free'd\n");
 	free(numPuddings);
+	printf("Puddings Free'd\n");
 	freeCards(cards);
+	printf("Cards Free'd\n");
 	freePlayers(players, numPlayers);
+	printf("Players Free'd");
 }
 
 
