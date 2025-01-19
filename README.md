@@ -5,6 +5,6 @@ With this purpose in mind, I include additional layers of complexity throughout 
 
 Since Sushi Go does not have any file requirements, you can simply download the code from GitHub or paste it into a C file to run it.
 
-Sushi Go is intended to simulate the card game "Sushi Go". Although this program does not include user input for their "turn", users are welcome to expand on this code to include more user involvement.
+Sushi Go is intended to simulate the card game "Sushi Go". Although this program does not include player input for their "turn", users are welcome to expand on this code to include more player involvement.
 
 All are welcome to use my version of Sushi Go or build off of it free of charge for personal or commercial use.
